@@ -209,3 +209,7 @@ __marimo__/
 #custom
 output.txt
 .DS_Store
+
+index.html
+output.pdf
+text.txt

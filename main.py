@@ -1,73 +1,37 @@
-from selenium import webdriver
-from selenium.common import NoSuchElementException
-from selenium.webdriver import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+import requests
 from bs4 import BeautifulSoup
-from time import sleep
+import lxml
+import pdfkit
+from PySide6.QtWidgets import QMainWindow, QApplication
+import sys
 
-def fetch_book(url="https://anylang.net/ru/books/de/malenkiy-princ/read"):
-    driver = webdriver.Chrome()
-    driver.get(url)
-    sleep(2)
-    try:
-        skip_btn = driver.find_element(By.CLASS_NAME, "enjoyhint_skip_btn")
-        skip_btn.click()
-        print("Skip btn clicked")
-    except NoSuchElementException:
-        print("Skip btn not found")
-    sleep(2)
+from ui.UI_MainWindow import Ui_MainWindow
 
-    pages = []
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.connect_signals_to_slots()
 
-    initial_html = driver.page_source
-    soup = BeautifulSoup(initial_html, "html.parser")
-    source_pages = soup.find_all(class_="page")
-    for source_page in source_pages:
-        if source_page.text != "loading":
-            pages.append(source_page)
+    def fetch_book(self):
+        url = self.urlField.text()
+        if len(url) >= 10:
+            html = requests.get(url).text
 
-    height = driver.execute_script("return document.body.scrollHeight")
-    previousOffset = 0
-    tries = 0
+        with open("index.html", "r", encoding="utf-8") as f:
+            html = f.read()
+        self.parse_book(html)
 
-    while True:
-        initial_html = driver.page_source
-        soup = BeautifulSoup(initial_html, "html.parser")
-        source_pages = soup.find_all(class_="page")
-        for source_page in source_pages:
-            pass
+    def parse_book(self, html):
+        soup = BeautifulSoup(html, "lxml")
+        pages = soup.find_all("div", class_="page")
 
+    def connect_signals_to_slots(self):
+        self.runBtn.clicked.connect(self.fetch_book)
 
-        driver.execute_script("window.scrollBy(0, 1000);")
-        scroll_offset = driver.execute_script("return window.pageYOffset")
-
-        if scroll_offset >= height:
-            print("Scrolled to bottom")
-            break
-        elif scroll_offset == previousOffset:
-            tries = tries + 1
-        if tries >= 3:
-            print("Scrolling stoped")
-            break
-        previousOffset = scroll_offset
-
-    previousOffset = 0
-    tries = 0
-    # sleep(10)
-
-def print_pages(pages):
-    for page in pages:
-        print(page.text)
-
-def write_pages(pages):
-    tmp = [page.text for page in pages]
-    with open("output.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(tmp))
-
-def main():
-    fetch_book()
 
 if __name__ == '__main__':
-    main()
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    app.exec()
