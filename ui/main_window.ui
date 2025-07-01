@@ -44,13 +44,6 @@
     <item>
      <widget class="QPlainTextEdit" name="logsField"/>
     </item>
-    <item>
-     <widget class="QProgressBar" name="progressBar">
-      <property name="value">
-       <number>20</number>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
  </widget>

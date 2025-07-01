@@ -213,3 +213,4 @@ output.txt
 index.html
 output.pdf
 text.txt
+*.pkl

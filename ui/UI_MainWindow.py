@@ -16,8 +16,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLineEdit, QMainWindow,
-    QPlainTextEdit, QProgressBar, QPushButton, QSizePolicy,
-    QVBoxLayout, QWidget)
+    QPlainTextEdit, QPushButton, QSizePolicy, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -48,12 +48,6 @@ class Ui_MainWindow(object):
         self.logsField.setObjectName(u"logsField")
 
         self.verticalLayout.addWidget(self.logsField)
-
-        self.progressBar = QProgressBar(self.centralwidget)
-        self.progressBar.setObjectName(u"progressBar")
-        self.progressBar.setValue(20)
-
-        self.verticalLayout.addWidget(self.progressBar)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
