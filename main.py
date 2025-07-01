@@ -1,10 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import lxml
-from fpdf import FPDF
 from tempfile import NamedTemporaryFile
 from PySide6.QtWidgets import QMainWindow, QApplication
-from PySide6.QtCore import QStandardPaths
+from PySide6.QtCore import QStandardPaths, QThread, Signal
 import sys
 
 from ui.UI_MainWindow import Ui_MainWindow
@@ -34,42 +33,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         file_name = book_name + ".pdf"
         pdf = PDFWriter("P", "mm", "A4", book_name)
         pdf.add_page()
-        pdf.add_font("Helvetica", "", "fonts/Helvetica.ttf", uni=True)
-        pdf.add_font("Helvetica", "B", "fonts/Helvetica-Bold.ttf", uni=True)
 
         for page in pages:
             children = page.find_all()
             for child in children:
                 if child.name == "img":
-                    image_width = 80
-
                     relativ_url = child.get("src")
-                    url = f"https://anylang.net{relativ_url}"
-                    response = requests.get(url, verify=False).content
-
-                    with NamedTemporaryFile(suffix=".jpeg") as f:
-                        f.write(response)
-                        pdf.image(name=f.name, w = image_width, x = ((pdf.w - image_width)/2))
-
+                    pdf.add_image(relativ_url)
                 elif not self.check_empty_paragraph(child):
                     try:
                         if child.get("style") == "text-align: center;":
-                            pdf.set_font("Helvetica", "B", size=24)
-                            pdf.cell(0, 8, txt=child.text, align="C")
-                            pdf.ln()
+                           pdf.add_title(child.text)
                         elif child.get("class") is not None:
                             if child.get("class")[0] == "toc_h":
-                                pdf.set_font("Helvetica", "B", size=18)
-                                pdf.cell(0, 16, txt=child.text)
-                                pdf.ln()
+                                pdf.add_chapter_title(child.text)
                         else:
-                            pdf.set_font("Helvetica", "", size=14)
-                            pdf.multi_cell(0, 8, txt=child.text)
-                            pdf.ln()
+                            pdf.add_text(child.text)
                     except Exception as e:
                         print(e)
 
-        pdf.output(f"{self.documents_path}/{file_name}", "F")
+        pdf.output(f"{self.documents_path}/{file_name}")
         print("done")
 
     def check_empty_paragraph(self, paragraph):
@@ -77,7 +60,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def connect_signals_to_slots(self):
         self.runBtn.clicked.connect(self.fetch_book)
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
