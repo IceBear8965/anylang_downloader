@@ -1,73 +1,86 @@
-from selenium import webdriver
-from selenium.common import NoSuchElementException
-from selenium.webdriver import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+import requests
 from bs4 import BeautifulSoup
-from time import sleep
+import lxml
+from fpdf import FPDF
+from tempfile import NamedTemporaryFile
+from PySide6.QtWidgets import QMainWindow, QApplication
+from PySide6.QtCore import QStandardPaths
+import sys
 
-def fetch_book(url="https://anylang.net/ru/books/de/malenkiy-princ/read"):
-    driver = webdriver.Chrome()
-    driver.get(url)
-    sleep(2)
-    try:
-        skip_btn = driver.find_element(By.CLASS_NAME, "enjoyhint_skip_btn")
-        skip_btn.click()
-        print("Skip btn clicked")
-    except NoSuchElementException:
-        print("Skip btn not found")
-    sleep(2)
+from ui.UI_MainWindow import Ui_MainWindow
+from pdf_writer import PDFWriter
 
-    pages = []
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.documents_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
+        requests.packages.urllib3.disable_warnings()
 
-    initial_html = driver.page_source
-    soup = BeautifulSoup(initial_html, "html.parser")
-    source_pages = soup.find_all(class_="page")
-    for source_page in source_pages:
-        if source_page.text != "loading":
-            pages.append(source_page)
+        self.connect_signals_to_slots()
 
-    height = driver.execute_script("return document.body.scrollHeight")
-    previousOffset = 0
-    tries = 0
+    def fetch_book(self):
+        url = self.urlField.text()
+        if len(url) >= 10:
+            html = requests.get(url).text
+            self.urlField.clear()
+            print("fetched")
+            self.write_book(html)
 
-    while True:
-        initial_html = driver.page_source
-        soup = BeautifulSoup(initial_html, "html.parser")
-        source_pages = soup.find_all(class_="page")
-        for source_page in source_pages:
-            pass
+    def write_book(self, html):
+        soup = BeautifulSoup(html, "lxml")
+        pages = soup.find_all("div", class_="page")
+        book_name = soup.find("title").text.split("|")[0].strip()
+        file_name = book_name + ".pdf"
+        pdf = PDFWriter("P", "mm", "A4", book_name)
+        pdf.add_page()
+        pdf.add_font("Helvetica", "", "fonts/Helvetica.ttf", uni=True)
+        pdf.add_font("Helvetica", "B", "fonts/Helvetica-Bold.ttf", uni=True)
 
+        for page in pages:
+            children = page.find_all()
+            for child in children:
+                if child.name == "img":
+                    image_width = 80
 
-        driver.execute_script("window.scrollBy(0, 1000);")
-        scroll_offset = driver.execute_script("return window.pageYOffset")
+                    relativ_url = child.get("src")
+                    url = f"https://anylang.net{relativ_url}"
+                    response = requests.get(url, verify=False).content
 
-        if scroll_offset >= height:
-            print("Scrolled to bottom")
-            break
-        elif scroll_offset == previousOffset:
-            tries = tries + 1
-        if tries >= 3:
-            print("Scrolling stoped")
-            break
-        previousOffset = scroll_offset
+                    with NamedTemporaryFile(suffix=".jpeg") as f:
+                        f.write(response)
+                        pdf.image(name=f.name, w = image_width, x = ((pdf.w - image_width)/2))
 
-    previousOffset = 0
-    tries = 0
-    # sleep(10)
+                elif not self.check_empty_paragraph(child):
+                    try:
+                        if child.get("style") == "text-align: center;":
+                            pdf.set_font("Helvetica", "B", size=24)
+                            pdf.cell(0, 8, txt=child.text, align="C")
+                            pdf.ln()
+                        elif child.get("class") is not None:
+                            if child.get("class")[0] == "toc_h":
+                                pdf.set_font("Helvetica", "B", size=18)
+                                pdf.cell(0, 16, txt=child.text)
+                                pdf.ln()
+                        else:
+                            pdf.set_font("Helvetica", "", size=14)
+                            pdf.multi_cell(0, 8, txt=child.text)
+                            pdf.ln()
+                    except Exception as e:
+                        print(e)
 
-def print_pages(pages):
-    for page in pages:
-        print(page.text)
+        pdf.output(f"{self.documents_path}/{file_name}", "F")
+        print("done")
 
-def write_pages(pages):
-    tmp = [page.text for page in pages]
-    with open("output.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(tmp))
+    def check_empty_paragraph(self, paragraph):
+        return paragraph.text.strip() == ""
 
-def main():
-    fetch_book()
+    def connect_signals_to_slots(self):
+        self.runBtn.clicked.connect(self.fetch_book)
+
 
 if __name__ == '__main__':
-    main()
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    app.exec()
