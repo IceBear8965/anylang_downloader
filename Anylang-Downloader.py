@@ -1,8 +1,10 @@
 import requests
+from PySide6.QtGui import QIcon
 from bs4 import BeautifulSoup
 import lxml
 from PySide6.QtWidgets import QMainWindow, QApplication
 from PySide6.QtCore import QStandardPaths, QObject, QThread, Signal
+from PySide6.QtGui import QIcon
 import sys, os
 
 from ui.UI_MainWindow import Ui_MainWindow
@@ -66,6 +68,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.basedir = os.path.dirname(__file__)
+
+        self.setWindowTitle("Anylang Downloader")
+        self.setWindowIcon(QIcon(os.path.join(self.basedir, "images/logo.ico")))
         self.logs = []
 
         self.connect_signals_to_slots()
