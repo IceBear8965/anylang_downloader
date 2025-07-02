@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import lxml
 from PySide6.QtWidgets import QMainWindow, QApplication
 from PySide6.QtCore import QStandardPaths, QObject, QThread, Signal
-import sys
+import sys, os
 
 from ui.UI_MainWindow import Ui_MainWindow
 from pdf_writer import PDFWriter
@@ -11,6 +11,8 @@ from pdf_writer import PDFWriter
 class Worker(QObject):
     finished = Signal()
     message = Signal(str)
+
+    basedir = os.path.dirname(__file__)
 
     def __init__(self, url):
         super().__init__()
@@ -31,7 +33,7 @@ class Worker(QObject):
         pages = soup.find_all("div", class_="page")
         book_name = soup.find("title").text.split("|")[0].strip()
         file_name = book_name + ".pdf"
-        pdf = PDFWriter("P", "mm", "A4", book_name)
+        pdf = PDFWriter("P", "mm", "A4", book_name, self.basedir)
         pdf.add_page()
 
         for page in pages:
@@ -51,10 +53,10 @@ class Worker(QObject):
                             pdf.add_text(child.text)
                     except Exception as e:
                         print(e)
-            self.message.emit(f"Writed Page {pages.index(page)+1} ot of {len(pages)}")
+            self.message.emit(f"Writed Page {pages.index(page)+1} out of {len(pages)}")
 
         pdf.output(f"{self.documents_path}/{file_name}")
-        self.message.emit("File Written")
+        self.message.emit("File Saved")
         self.finished.emit()
 
     def check_empty_paragraph(self, paragraph):
@@ -70,6 +72,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def run_thread(self):
         url = self.urlField.text()
+        self.logsField.clear()
+        self.logs = []
         if len(url) >= 10:
             # Создаём поток и рабочий объект
             self.thread = QThread()

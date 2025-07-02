@@ -1,14 +1,17 @@
+import os
+
 from fpdf import FPDF
 import requests
 from tempfile import NamedTemporaryFile
 
 class PDFWriter(FPDF):
-    def __init__(self, orientation='P', unit='mm', format='A4', book_name = ""):
+    def __init__(self, orientation='P', unit='mm', format='A4', book_name:str = "", basedir:str=""):
         super().__init__(orientation=orientation, unit=unit, format=format)
         self.book_name = book_name
-        self.add_font("Jost", "", "fonts/Jost-Regular.ttf", uni = True)
-        self.add_font("Jost", "B", "fonts/Jost-Bold.ttf", uni=True)
-        self.add_font("Jost-Light", "", "fonts/Jost-Light.ttf", uni=True)
+        fontsdir = os.path.join(basedir, "fonts")
+        self.add_font("Jost", "", os.path.join(fontsdir, "Jost-Regular.ttf"), uni = True)
+        self.add_font("Jost", "B", os.path.join(fontsdir, "Jost-Bold.ttf"), uni=True)
+        self.add_font("Jost-Light", "", os.path.join(fontsdir, "Jost-Light.ttf"), uni=True)
 
     def header(self):
         self.set_font("Jost", "", 10)
