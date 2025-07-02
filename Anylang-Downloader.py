@@ -10,11 +10,11 @@ import sys, os
 from ui.UI_MainWindow import Ui_MainWindow
 from pdf_writer import PDFWriter
 
+basedir = os.path.dirname(__file__)
+
 class Worker(QObject):
     finished = Signal()
     message = Signal(str)
-
-    basedir = os.path.dirname(__file__)
 
     def __init__(self, url):
         super().__init__()
@@ -35,7 +35,7 @@ class Worker(QObject):
         pages = soup.find_all("div", class_="page")
         book_name = soup.find("title").text.split("|")[0].strip()
         file_name = book_name + ".pdf"
-        pdf = PDFWriter("P", "mm", "A4", book_name, self.basedir)
+        pdf = PDFWriter("P", "mm", "A4", book_name, basedir)
         pdf.add_page()
 
         for page in pages:
@@ -64,14 +64,21 @@ class Worker(QObject):
     def check_empty_paragraph(self, paragraph):
         return paragraph.text.strip() == ""
 
+# Меняем дефолтный идентификатор приложухи на свой, чтоб винда правильно отображала иконку на панели задач
+try:
+    from ctypes import windll  # Only exists on Windows.
+    myappid = f'com.anylang-downloader'
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except ImportError:
+    pass
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.basedir = os.path.dirname(__file__)
 
         self.setWindowTitle("Anylang Downloader")
-        self.setWindowIcon(QIcon(os.path.join(self.basedir, "images/logo.ico")))
+        self.setWindowIcon(QIcon(os.path.join(basedir, "images/logo.ico")))
         self.logs = []
 
         self.connect_signals_to_slots()
