@@ -9,6 +9,7 @@ if sys.platform == "win32":
         "--windows-disable-console",
         "--plugin-enable=pyside6",
         "--include-data-dir=./fonts=fonts",
+        "--include-data-files=./images/logo.ico=images/logo.ico"
         "--assume-yes-for-downloads",
         "--show-memory",
         "--show-progress",
