@@ -1,7 +1,23 @@
 import sys, os
 
 if sys.platform == "win32":
-    args = []
+    args = [
+        "nuitka",
+        "--standalone",
+        "--onefile",
+        "--msvc=latest",
+        "--windows-disable-console",
+        "--plugin-enable=pyside6",
+        "--include-data-dir=./fonts=fonts",
+        "--assume-yes-for-downloads",
+        "--show-memory",
+        "--show-progress",
+        "--windows-icon-from-ico=./images/logo.ico",
+        "--windows-file-version=1.0.0",
+        '--windows-file-description="Anylang Downloader"',
+        "--output-dir=dist",
+        "Anylang-Downloader.py"
+        ]
 
 elif sys.platform == "darwin":
     args = [
